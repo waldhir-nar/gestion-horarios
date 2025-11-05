@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Horarios - UPCA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header>
+    <h1>Sistema de Gestión de Horarios</h1>
+    <!-- MENÚ ESTANDARIZADO -->
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('index') }}" class="boton-nav">Inicio</a></li>
+            <li><a href="{{ url_for('horarios_bp.lista_horarios') }}" class="boton-nav">Horarios</a></li>
+            <li><a href="{{ url_for('profesores_bp.lista') }}" class="boton-nav">Profesores</a></li>
+            <li><a href="{{ url_for('cursos_bp.lista') }}" class="boton-nav">Cursos</a></li>
+            <li><a href="/aulas" class="boton-nav">Aulas</a></li>
+            <li><a href="{{ url_for('gestion_bp.gestion') }}" class="boton-nav">Gestion-H</a></li>
+        </ul>
+    </nav>
+</header>
+
+<div class="container">
+    <div class="card">
+        <h2>Bienvenido</h2>
+        <p>Este es el sistema de gestión de horarios de la Universidad Popular del Cesar.</p>
+        <p>Utilice la navegación para acceder a las diferentes secciones:</p>
+        <ul>
+            <li><b>Horarios:</b> Para visualizar y crear nuevos horarios.</li>
+            <li><b>Gestión:</b> Para administrar semestres, clases, cursos y profesores.</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>Acciones Rápidas</h2>
+        <div class="quick-actions">
+            <a href="{{ url_for('horarios_bp.crear_horario') }}" class="btn">Crear Nuevo Horario</a>
+            <a href="{{ url_for('gestion_bp.gestion') }}" class="btn">Ir a Gestión</a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

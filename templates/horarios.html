@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Horarios</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1 >Horarios</h1>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('index') }}" class="boton-nav">Inicio</a></li>
+                <li><a href="{{ url_for('horarios_bp.lista_horarios') }}" class="boton-nav">Horarios</a></li>
+                <li><a href="{{ url_for('profesores_bp.lista') }}" class="boton-nav">Profesores</a></li>
+                <li><a href="{{ url_for('cursos_bp.lista') }}" class="boton-nav">Cursos</a></li>
+                <li><a href="/aulas" class="boton-nav">Aulas</a></li>
+                <li><a href="{{ url_for('gestion_bp.gestion') }}" class="boton-nav">Gestion-H</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="add-button-container">
+            <a href="{{ url_for('horarios_bp.add_horario_form') }}" class="add-button">➕ Crear Nuevo Horario Manual</a>
+            <!-- BOTÓN NUEVO PARA CREACIÓN AUTOMÁTICA -->
+            <a href="{{ url_for('horarios_bp.crear_horario_auto_form') }}" class="add-button automatic-button">🚀 Crear Horario Automático</a>
+        </div>
+
+        <div class="horarios-grid">
+            {% for id, horario in horarios_guardados.items() %}
+                <div class="horario-card">
+                    <h2>{{ horario.nombre }}
+                        {% if horario.curso_nombre %}
+                            <span class="curso-tag"> ({{ horario.curso_nombre }})</span>
+                        {% endif %}
+                    </h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Día</th>
+                                <th>Hora</th>
+                                <th>Curso</th>
+                                <th>Profesor</th>
+                                <th>Asignatura</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for detalle in horario.detalles %}
+                                <tr>
+                                    <td>{{ detalle.dia }}</td>
+                                    <td>{{ detalle.h_inicio }} - {{ detalle.h_fin }}</td>
+                                    <td>{{ detalle.curso_nombre }}</td>
+                                    <td>{{ detalle.profesor_nombre }}</td>
+                                    <td>{{ detalle.clase_nombre }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>No hay horarios guardados.</p>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aulas - Cuadro General</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f1f1f1;
+}
+
+header {
+    background: #b30000;
+    color: white;
+    padding: 15px;
+    text-align: center;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    text-align: center;
+}
+
+nav ul li {
+    display: inline-block;
+    margin: 10px;
+}
+
+.boton-nav {
+    color: white;
+    background-color: #b30000;
+    padding: 10px 18px;
+    border-radius: 8px;
+    display: block;
+    font-weight: bold;
+    text-decoration: none;
+    transition: 0.3s ease;
+}
+
+.boton-nav:hover {
+    background-color: #ff1a1a;
+    transform: translateY(-3px);
+}
+
+.tabla-aulas {
+    width: 95%;
+    margin: 25px auto;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0 12px rgba(0,0,0,0.08);
+}
+
+.tabla-aulas th {
+    background: #b30000;
+    color: white;
+    padding: 12px;
+    font-size: 15px;
+    text-transform: uppercase;
+}
+
+.tabla-aulas td {
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+
+.tabla-aulas tr:hover {
+    background: #ffe5e5;
+}
+
+#statsContainer {
+    width: 80%;
+    margin: 40px auto;
+    background: #fff;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.08);
+}
+
+@media (max-width: 768px) {
+    .tabla-aulas {
+        font-size: 12px;
+    }
+    #statsContainer {
+        width: 95%;
+    }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Cuadro General de Aulas</h1>
+</header>
+
+<nav>
+<ul>
+    <li><a href="/" class="boton-nav">Inicio</a></li>
+    <li><a href="/horarios" class="boton-nav">Horarios</a></li>
+    <li><a href="/profesores" class="boton-nav">Profesores</a></li>
+    <li><a href="/cursos" class="boton-nav">Cursos</a></li> <!-- AÑADIDO -->
+    <li><a href="/aulas" class="boton-nav">Aulas</a></li>
+    <li><a href="/gestion" class="boton-nav">Gestion-H</a></li>
+</ul>
+</nav>
+
+<table class="tabla-aulas">
+<thead>
+<tr>
+    <th>Aula</th>
+    <th>Capacidad</th>
+    <th>Bloque</th>
+    <th>Asignatura</th>
+    <th>Profesor</th>
+    <th>Día</th>
+    <th>Horario</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+    <td>D-402</td>
+    <td>40</td>
+    <td>Bloque D</td>
+    <td>Métodos Numéricos</td>
+    <td>Abuabará Cortes, Ricki</td>
+    <td>Lunes</td>
+    <td>6:15pm – 7:45pm</td>
+</tr>
+
+<tr>
+    <td>A-103</td>
+    <td>35</td>
+    <td>Bloque A</td>
+    <td>Matemáticas Discreta</td>
+    <td>Abuabará Cortes, Ricki</td>
+    <td>Miércoles</td>
+    <td>6:15pm – 7:45pm</td>
+</tr>
+
+<tr>
+    <td>A-103</td>
+    <td>35</td>
+    <td>Bloque A</td>
+    <td>Matemáticas Discreta</td>
+    <td>Abuabará Cortes, Ricki</td>
+    <td>Jueves</td>
+    <td>6:15pm – 7:45pm</td>
+</tr>
+
+<tr>
+    <td>B-203</td>
+    <td>28</td>
+    <td>Bloque B</td>
+    <td>Modelo de Ingeniería</td>
+    <td>Torres Cuesta, Néstor</td>
+    <td>Martes</td>
+    <td>6:15pm – 7:00pm</td>
+</tr>
+
+<tr>
+    <td>B-203</td>
+    <td>28</td>
+    <td>Bloque B</td>
+    <td>Compiladores</td>
+    <td>Torres Cuesta, Néstor</td>
+    <td>Martes</td>
+    <td>7:00pm – 9:15pm</td>
+</tr>
+
+<tr>
+    <td>B-301</td>
+    <td>30</td>
+    <td>Bloque B</td>
+    <td>Sistemas Expertos</td>
+    <td>Torres Cuesta, Néstor</td>
+    <td>Viernes</td>
+    <td>7:00pm – 9:15pm</td>
+</tr>
+
+<tr>
+    <td>S-102</td>
+    <td>40</td>
+    <td>Bloque S</td>
+    <td>Electiva Profesional II</td>
+    <td>Docente 3</td>
+    <td>Lunes</td>
+    <td>7:45pm – 9:15pm</td>
+</tr>
+
+<tr>
+    <td>S-102</td>
+    <td>40</td>
+    <td>Bloque S</td>
+    <td>Electiva Profesional II</td>
+    <td>Docente 3</td>
+    <td>Jueves</td>
+    <td>6:15pm – 7:45pm</td>
+</tr>
+
+<tr>
+    <td>C-401</td>
+    <td>35</td>
+    <td>Bloque C</td>
+    <td>Estadística Inferencial</td>
+    <td>Docente 3</td>
+    <td>Lunes</td>
+    <td>7:45pm – 9:15pm</td>
+</tr>
+</tbody>
+</table>
+
+<h2 style="text-align:center; margin-top: 40px;">Resumen y Estadísticas</h2>
+
+<div id="statsContainer"></div>
+
+<script>
+//LECTURA DE TABLA
+const rows = document.querySelectorAll(".tabla-aulas tbody tr");
+let data = [];
+
+rows.forEach(row => {
+    const cols = row.querySelectorAll("td");
+    data.push({
+        aula: cols[0].innerText,
+        asignatura: cols[3].innerText,
+        profesor: cols[4].innerText,
+        dia: cols[5].innerText,
+        horario: cols[6].innerText
+    });
+});
+
+function calcularHoras(horario) {
+    horario = horario.replace("–", "-");
+
+    const [inicio, fin] = horario.split("-").map(a => a.trim());
+    const [h1, m1] = inicio.replace("pm","").replace("am","").split(":").map(Number);
+    const [h2, m2] = fin.replace("pm","").replace("am","").split(":").map(Number);
+
+    let total = (h2*60+m2) - (h1*60+m1);
+    return total / 60;
+}
+
+
+//AGRUPAR POR PROFESOR
+let resumen = {};
+
+data.forEach(clase => {
+    if(!resumen[clase.profesor]) {
+        resumen[clase.profesor] = {
+            totalHoras: 0,
+            grupos: new Set(),
+            repetidos: {}
+        };
+    }
+
+    resumen[clase.profesor].totalHoras += calcularHoras(clase.horario);
+    resumen[clase.profesor].grupos.add(clase.asignatura);
+
+    let key = `${clase.asignatura} | ${clase.horario}`;
+    resumen[clase.profesor].repetidos[key] = (resumen[clase.profesor].repetidos[key] || 0) + 1;
+});
+
+//IMPRESIÓN
+let contenedor = document.getElementById("statsContainer");
+
+for(const profesor in resumen) {
+    let r = resumen[profesor];
+
+    let html = `
+        <h3>${profesor}</h3>
+        <p><strong>Total horas por semana:</strong> ${r.totalHoras.toFixed(2)}h</p>
+        <p><strong>Grupos distintos:</strong> ${r.grupos.size}</p>
+    `;
+
+    // Clases repetidas
+    let rep = "";
+    for(const key in r.repetidos) {
+        if(r.repetidos[key] > 1) {
+            rep += `<li>${key} → ${r.repetidos[key]} clases</li>`;
+        }
+    }
+
+    if(rep !== "") {
+        html += `<p><strong>Clases repetidas:</strong></p><ul>${rep}</ul>`;
+    }
+
+    // Alertas automáticas
+    let alertas = [];
+    if(r.totalHoras > 6) alertas.push("Tiene más de 6 horas semanales, revisar carga.");
+    if(r.grupos.size > 3) alertas.push("Dicta más de 3 grupos, posible sobrecarga.");
+
+    if(alertas.length > 0) {
+        html += `<p style="color:red"><strong>Alertas:</strong><br>• ${alertas.join("<br>• ")}</p>`;
+    }
+
+    html += `<hr>`;
+    contenedor.innerHTML += html;
+}
+</script>
+
+</body>
+</html>

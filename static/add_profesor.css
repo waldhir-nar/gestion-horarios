@@ -1,0 +1,70 @@
+/* ESTILOS ESPECÍFICOS PARA ADD_PROFESOR.HTML */
+
+body.add-prof-page {
+    background: #f2f2f2;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.form-container {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 500px;
+}
+
+.form-container h1 {
+    text-align: center;
+    color: #b30000;
+    margin-bottom: 25px;
+}
+
+.form-container label {
+    font-weight: bold;
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+.form-container input[type="text"],
+.form-container input[type="email"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box; /* To ensure padding doesn't affect width */
+}
+
+.form-actions {
+    text-align: center;
+    margin-top: 25px;
+}
+
+.form-actions .btn {
+    background: #b30000;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s;
+}
+
+.form-actions .btn:hover {
+    background: #800000;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}

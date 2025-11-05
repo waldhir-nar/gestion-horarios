@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Clase - UPCA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='add_form.css') }}">
+</head>
+<body>
+<div class="container">
+    <h2>Editar Clase/Asignatura</h2>
+
+    <!-- Se pasa el id_clase a la URL del formulario -->
+    <form action="{{ url_for('gestion_bp.update_clase', id_clase=clase.id_clase) }}" method="POST">
+        
+        <div class="form-row">
+            <label for="nombre">Nombre Asignatura</label>
+            <!-- Se precarga el valor existente -->
+            <input type="text" id="nombre" name="nombre" value="{{ clase.nombre }}" required>
+        </div>
+
+        <div class="form-row">
+            <label for="descripcion">Descripción</label>
+            <!-- El contenido de la textarea se coloca entre las etiquetas -->
+            <textarea id="descripcion" name="descripcion">{{ clase.descripcion or '' }}</textarea>
+        </div>
+
+        <div class="form-row">
+            <label for="n_horas">horas max dia</label>
+            <input type="number" id="n_horas" name="n_horas" value="{{ clase.n_horas }}">
+        </div>
+
+        <div class="form-row">
+            <label for="horas_semana">Horas por Semana</label>
+            <input type="number" id="horas_semana" name="horas_semana" value="{{ clase.horas_semana }}">
+        </div>
+
+        <div class="form-row">
+            <label for="id_profesor">Profesor</label>
+            <select id="id_profesor" name="id_profesor" required>
+                <option value="">Seleccionar Profesor...</option>
+                {% for p in profesores %}
+                    <!-- Lógica para preseleccionar el profesor actual -->
+                    <option value="{{ p.id_profesor }}" {% if p.id_profesor == clase.id_profesor %}selected{% endif %}>{{ p.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label for="id_curso">Curso</label>
+            <select id="id_curso" name="id_curso" required>
+                <option value="">Seleccionar Curso...</option>
+                {% for c in cursos %}
+                    <!-- Lógica para preseleccionar el curso actual -->
+                    <option value="{{ c.id_curso }}" {% if c.id_curso == clase.id_curso %}selected{% endif %}>{{ c.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label for="id_semestre">Semestre</label>
+            <select id="id_semestre" name="id_semestre">
+                <option value="">Seleccionar Semestre...</option>
+                {% for s in semestres %}
+                    <!-- Lógica para preseleccionar el semestre actual -->
+                    <option value="{{ s.id_semestre }}" {% if s.id_semestre == clase.id_semestre %}selected{% endif %}>{{ s.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn">Actualizar Clase</button>
+            <a href="{{ url_for('gestion_bp.gestion') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+</body>
+</html>

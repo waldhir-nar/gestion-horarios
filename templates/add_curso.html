@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Agregar Nuevo Curso</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='add_profesor.css') }}"> <!-- Reusamos el mismo CSS -->
+</head>
+<body class="add-prof-page">
+    <div class="form-container">
+        <h1>Registrar Nuevo Curso</h1>
+        <form action="{{ url_for('cursos_bp.add') }}" method="POST">
+            <label for="nombre">Nombre del Curso:</label>
+            <input type="text" id="nombre" name="nombre" placeholder="Ej: Ing. de Sistemas - Semestre 7" required>
+
+            <label for="descripcion">Descripción:</label>
+            <input type="text" id="descripcion" name="descripcion" placeholder="Ej: Grupo Principal">
+
+            <div class="form-actions">
+                <button type="submit" class="btn">Guardar</button>
+                <a href="{{ url_for('cursos_bp.lista') }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

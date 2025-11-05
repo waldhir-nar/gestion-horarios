@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Horario Automático - UPCA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='add_form.css') }}">
+</head>
+<body>
+
+<header>
+    <h1>Generación Automática de Horarios</h1>
+</header>
+
+<div class="container">
+    <div class="form-container">
+        <h2 style="text-align: center; margin-bottom: 2rem;">Parámetros de Generación</h2>
+        
+        <p style="text-align: center; margin-bottom: 2rem;">Seleccione los parámetros necesarios para iniciar la ejecución del algoritmo de creación de horarios.</p>
+
+        <!-- El formulario enviará los datos a la nueva ruta del backend -->
+        <form action="{{ url_for('horarios_bp.ejecutar_creacion_automatica') }}" method="POST">
+
+            <div class="form-row">
+                <label for="nombre">Nombre del Nuevo Horario</label>
+                <input type="text" id="nombre" name="nombre" required placeholder="Ej: Horario de Sistemas 2024-1">
+            </div>
+
+            <div class="form-row">
+                <label for="id_curso">Curso para el que se genera el horario</label>
+                <select id="id_curso" name="id_curso" required>
+                    <option value="">Seleccione un Curso...</option>
+                    {% for curso in cursos %}
+                    <option value="{{ curso.id_curso }}">{{ curso.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="id_semestre">Semestre de Aplicación</label>
+                <select id="id_semestre" name="id_semestre" required>
+                    <option value="">Seleccione un Semestre...</option>
+                    {% for semestre in semestres %}
+                    <option value="{{ semestre.id_semestre }}">{{ semestre.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-actions" style="margin-top: 2rem;">
+                <button type="submit" class="btn">🚀 Ejecutar Creación Automática</button>
+                <a href="{{ url_for('horarios_bp.lista_horarios') }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

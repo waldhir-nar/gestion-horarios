@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Agregar Semestre</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Se usa el mismo CSS que add_curso.html para consistencia -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='add_profesor.css') }}">
+</head>
+<!-- Se usa la misma clase de body que add_curso.html -->
+<body class="add-prof-page">
+    <!-- Se usa la misma estructura de contenedor que add_curso.html -->
+    <div class="form-container">
+        <h1>Agregar Nuevo Semestre</h1>
+        <form action="{{ url_for('gestion_bp.add_semestre') }}" method="POST">
+            
+            <label for="nombre">Nombre del Semestre (ej: 2025-1):</label>
+            <input type="text" id="nombre" name="nombre" required>
+
+            <label for="fecha_inicio">Fecha de Inicio:</label>
+            <input type="date" id="fecha_inicio" name="fecha_inicio">
+
+            <label for="fecha_fin">Fecha de Fin:</label>
+            <input type="date" id="fecha_fin" name="fecha_fin">
+
+            <!-- Se usa la misma estructura de botones que add_curso.html -->
+            <div class="form-actions">
+                <button type="submit" class="btn">Guardar Semestre</button>
+                <a href="{{ url_for('gestion_bp.gestion') }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

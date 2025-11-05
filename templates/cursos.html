@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Cursos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header>
+    <!-- TÍTULO CORREGIDO -->
+    <h1>CURSOS</h1>
+    <br>
+    <nav>
+        <ul>
+            <!-- ENLACES CORREGIDOS con url_for -->
+            <li><a href="{{ url_for('index') }}" class="boton-nav">Inicio</a></li>
+            <li><a href="{{ url_for('horarios_bp.lista_horarios') }}" class="boton-nav">Horarios</a></li>
+            <li><a href="{{ url_for('profesores_bp.lista') }}" class="boton-nav">Profesores</a></li>
+            <li><a href="{{ url_for('cursos_bp.lista') }}" class="boton-nav">Cursos</a></li>
+            <li><a href="/aulas" class="boton-nav">Aulas</a></li>
+            <li><a href="{{ url_for('gestion_bp.gestion') }}" class="boton-nav">Gestion-H</a></li>
+        </ul>
+    </nav>
+</header>
+
+<div class="container">
+    <h1 style="text-align:center; margin-top:20px;">Cursos Registrados</h1>
+    
+    <!-- Botón de agregar ya estandarizado -->
+    <div class="add-button-container">
+        <a href="{{ url_for('cursos_bp.add') }}" class="add-button">➕ Agregar Curso</a>
+    </div>
+
+    <div class="cards-container">
+        {% for curso in cursos %}
+        <div class="card">
+            <div class="card-content">
+                <h2>{{ curso['nombre'] }}</h2>
+                <p>{{ curso['descripcion'] }}</p>
+                <div style="display: flex; gap: 10px; margin-top: 15px; justify-content: flex-end;">
+                    <!-- BOTÓN ELIMINAR CORREGIDO: clase btn-danger sin estilos en línea -->
+                    <a href="{{ url_for('cursos_bp.delete', id_curso=curso['id_curso']) }}" class="btn btn-danger">Eliminar</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <p style="text-align:center; width:100%;">No hay cursos registrados todavía.</p>
+        {% endfor %}
+    </div>
+</div>
+
+</body>
+</html>

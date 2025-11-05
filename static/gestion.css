@@ -1,0 +1,72 @@
+/* Contenido de gestion.css */
+
+/* --- REGLA DE EMERGENCIA PARA CORREGIR LAYOUT --- */
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 20px auto; /* Centrado horizontal */
+    padding: 20px;
+}
+
+/* Estilos para las tarjetas de gestión */
+.gestion-card {
+    background-color: #f9f9f9; /* Un fondo ligeramente gris para las tarjetas */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px; /* Espacio entre las tarjetas */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Sombra sutil para dar profundidad */
+}
+
+.gestion-card h2 {
+    text-align: center;
+    color: #b30000; /* Color principal para los títulos */
+    margin-bottom: 15px;
+}
+
+/* Botón para añadir nuevo elemento */
+.add-button {
+    display: inline-block;
+    background-color: #28a745; /* Verde para acciones de añadir */
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.add-button:hover {
+    background-color: #218838; /* Verde más oscuro al pasar el ratón */
+}
+
+/* Estilos para formularios apilados dentro de las tarjetas */
+.form-stacked {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Espacio entre los campos del formulario */
+}
+
+.form-stacked label {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.form-stacked input,
+.form-stacked select,
+.form-stacked textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Contenedor para campos en línea, como horas */
+.form-inline {
+    display: flex;
+    gap: 20px; /* Espacio entre los campos en línea */
+}
+
+.form-inline > div {
+    flex: 1; /* Permite que los campos compartan el espacio */
+}

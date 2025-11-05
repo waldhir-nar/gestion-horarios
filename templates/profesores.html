@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profesores - UPCA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header>
+    <h1>PROFESORES</h1>
+    <br>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('index') }}" class="boton-nav">Inicio</a></li>
+            <li><a href="{{ url_for('horarios_bp.lista_horarios') }}" class="boton-nav">Horarios</a></li>
+            <li><a href="{{ url_for('profesores_bp.lista') }}" class="boton-nav">Profesores</a></li>
+            <li><a href="{{ url_for('cursos_bp.lista') }}" class="boton-nav">Cursos</a></li>
+            <li><a href="/aulas" class="boton-nav">Aulas</a></li>
+            <li><a href="{{ url_for('gestion_bp.gestion') }}" class="boton-nav">Gestion-H</a></li>
+        </ul>
+    </nav>
+</header>
+
+<div class="container">
+
+    <!-- BOTÓN DE AGREGAR ESTANDARIZADO -->
+    <div class="add-button-container">
+        <a href="{{ url_for('profesores_bp.add') }}" class="add-button">➕ Registrar Nuevo Profesor</a>
+    </div>
+
+    <!-- Contenedor principal para las tarjetas de profesor -->
+    <div class="contenedor-profesores">
+        {% for profesor in profesores %}
+        <div class="card-profesor">
+            <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Foto de profesor" class="foto-profesor">
+            <h3>{{ profesor.nombre }}</h3>
+            <p style="color: #6c757d;">C.I: {{ profesor.cedula }}</p>
+            
+            <div class="info-oculta">
+                <p><strong>Correo:</strong> {{ profesor.correo or 'N/A' }}</p>
+                <p><strong>Teléfono:</strong> {{ profesor.telefono or 'N/A' }}</p>
+                
+                <!-- Botones de acción secundarios (estilo btn) -->
+                <div class="card-acciones">
+                    <a href="{{ url_for('profesores_bp.show_edit_form', id_profesor=profesor.id_profesor) }}" class="btn">Editar</a>
+                    <form action="{{ url_for('profesores_bp.delete', id_profesor=profesor.id_profesor) }}" method="POST" onsubmit="return confirm('¿Estás seguro de que quieres eliminar a este profesor?');" style="display: inline;">
+                        <button type="submit" class="btn btn-danger">Eliminar</button
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <p>No hay profesores registrados.</p>
+        {% endfor %}
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,15 +1,33 @@
-import os
+# 1. Importaciones necesarias
+from flask import Flask, render_template
+from database import get_db_connection
 
-from flask import Flask, send_file
+# Importar los blueprints de las funcionalidades
+from profesores import profesores_bp
+from cursos import cursos_bp
+from gestion import gestion_bp
+from horarios import horarios_bp # <-- AÑADIDO
 
 app = Flask(__name__)
 
+# 2. Registrar los blueprints con sus prefijos de URL
+app.register_blueprint(profesores_bp, url_prefix='/profesores')
+app.register_blueprint(cursos_bp, url_prefix='/cursos')
+app.register_blueprint(gestion_bp) 
+app.register_blueprint(horarios_bp) # <-- AÑADIDO (usará el prefijo '/horarios' definido en el blueprint)
+
+# --- Rutas HTML Principales ---
+
 @app.route("/")
 def index():
-    return send_file('src/index.html')
+    return render_template("index.html")
 
-def main():
-    app.run(port=int(os.environ.get('PORT', 80)))
+# La ruta /horarios ha sido movida a horarios_bp, por lo que se elimina de aquí.
 
-if __name__ == "__main__":
-    main()
+@app.route("/aulas")
+def aulas():
+    return render_template("aulas.html")
+
+# 3. Bloque para iniciar el servidor
+if __name__ == '__main__':
+  app.run(host='0.0.0.0', port=8080, debug=True)

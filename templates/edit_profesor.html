@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Profesor - UPCA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Reutilizamos algunos estilos de gestión para los formularios y botones -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='gestion.css') }}">
+</head>
+<body>
+
+<header>
+    <h1>Editar Profesor</h1>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('profesores_bp.lista') }}" class="boton-nav">Volver a la Lista</a></li>
+        </ul>
+    </nav>
+</header>
+
+<div class="container">
+    <div class="gestion-card" style="max-width: 600px; margin-top: 40px;">
+        <h2>Modificar datos del profesor</h2>
+        <form action="{{ url_for('profesores_bp.update', id_profesor=profesor.id_profesor) }}" method="POST">
+            
+            <div class="form-grid" style="grid-template-columns: 1fr;">
+                <div>
+                    <label for="cedula">Cédula:</label>
+                    <input type="text" id="cedula" name="cedula" value="{{ profesor.cedula }}" class="form-control" required>
+                </div>
+                <div>
+                    <label for="nombre">Nombre Completo:</label>
+                    <input type="text" id="nombre" name="nombre" value="{{ profesor.nombre }}" class="form-control" required>
+                </div>
+                <div>
+                    <label for="correo">Correo Electrónico:</label>
+                    <input type="email" id="correo" name="correo" value="{{ profesor.correo or '' }}" class="form-control">
+                </div>
+                <div>
+                    <label for="telefono">Teléfono:</label>
+                    <input type="tel" id="telefono" name="telefono" value="{{ profesor.telefono or '' }}" class="form-control">
+                </div>
+            </div>
+
+            <button type="submit" class="btn" style="width:100%; margin-top: 20px;">Guardar Cambios</button>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

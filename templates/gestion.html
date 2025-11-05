@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión - UPCA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='gestion.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='add_form.css') }}">
+</head>
+<body>
+
+<header>
+    <h1>Sistema de Gestión de Horarios - UPCA</h1>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('index') }}" class="boton-nav">Inicio</a></li>
+            <li><a href="{{ url_for('horarios_bp.lista_horarios') }}" class="boton-nav">Horarios</a></li>
+            <li><a href="{{ url_for('profesores_bp.lista') }}" class="boton-nav">Profesores</a></li>
+            <li><a href="{{ url_for('cursos_bp.lista') }}" class="boton-nav">Cursos</a></li>
+            <li><a href="/aulas" class="boton-nav">Aulas</a></li>
+            <li><a href="{{ url_for('gestion_bp.gestion') }}" class="boton-nav">Gestion-H</a></li>
+        </ul>
+    </nav>
+</header>
+
+<div class="container">
+
+    <!-- SECCIÓN DE SEMESTRES -->
+    <div class="gestion-card">
+        <h2 style="text-align: center;">Gestión de Semestres</h2>
+        <div class="add-button-container">
+            <a href="{{ url_for('gestion_bp.add_form') }}" class="add-button">➕ Agregar Nuevo Semestre</a>
+        </div>
+        <h3 style="text-align: center;">Semestres Registrados</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Fecha Inicio</th>
+                    <th>Fecha Fin</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for semestre in semestres %}
+                <tr>
+                    <td>{{ semestre.nombre }}</td>
+                    <td>{{ semestre.fecha_inicio or 'N/A' }}</td>
+                    <td>{{ semestre.fecha_fin or 'N/A' }}</td>
+                    <td>
+                        <a href="{{ url_for('gestion_bp.edit_form', id_semestre=semestre.id_semestre) }}" class="btn">Editar</a>
+                        <form action="{{ url_for('gestion_bp.delete_semestre', id_semestre=semestre.id_semestre) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este semestre?');">
+                            <button type="submit" class="btn btn-danger">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4">No hay semestres registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECCIÓN DE CLASES -->
+    <div class="gestion-card">
+        <h2 style="text-align:center;">Gestión de Clases</h2>
+        <form action="{{ url_for('gestion_bp.add_clase') }}" method="post" style="max-width: 550px; margin: 20px auto;">
+            <h3 style="text-align:center; color: #333; margin-bottom: 1.5rem;">Agregar Nueva Clase/Asignatura</h3>
+            <div class="form-row">
+                <label for="nombre">Nombre Asignatura</label>
+                <input type="text" id="nombre" name="nombre" required>
+            </div>
+            <div class="form-row">
+                <label for="descripcion">Descripción</label>
+                <textarea id="descripcion" name="descripcion"></textarea>
+            </div>
+            <div class="form-row">
+                <label for="n_horas">horas max dia</label>
+                <input type="number" id="n_horas" name="n_horas">
+            </div>
+            <div class="form-row">
+                <label for="horas_semana">Horas por Semana</label>
+                <input type="number" id="horas_semana" name="horas_semana">
+            </div>
+            <div class="form-row">
+                <label for="id_profesor">Profesor</label>
+                <select id="id_profesor" name="id_profesor" required>
+                    <option value="">Seleccionar Profesor...</option>
+                    {% for p in profesores %}<option value="{{ p.id_profesor }}">{{ p.nombre }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="id_curso">Curso</label>
+                <select id="id_curso" name="id_curso" required>
+                    <option value="">Seleccionar Curso...</option>
+                    {% for c in cursos %}<option value="{{ c.id_curso }}">{{ c.nombre }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="id_semestre">Semestre</label>
+                <select id="id_semestre" name="id_semestre">
+                    <option value="">Seleccionar Semestre...</option>
+                    {% for s in semestres %}<option value="{{ s.id_semestre }}">{{ s.nombre }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-row" style="justify-content: center; margin-top: 20px;">
+                <button type="submit" class="btn">+ Agregar Clase</button>
+            </div>
+        </form>
+
+        <hr>
+
+        <h3 style="text-align: center;">Clases Registradas</h3>
+        <table>
+             <thead>
+                <tr>
+                    <th>Clase</th>
+                    <th>Profesor</th>
+                    <th>Curso</th>
+                    <th>Semestre</th>
+                    <th>horas max dia</th>
+                    <th>Horas/ Semana</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for clase in clases %}
+                <tr>
+                    <td>{{ clase.clase_nombre }}</td>
+                    <td>{{ clase.profesor_nombre or 'N/A' }}</td>
+                    <td>{{ clase.curso_nombre or 'N/A' }}</td>
+                    <td>{{ clase.semestre_nombre or 'N/A' }}</td>
+                    <td>{{ clase.n_horas or 'N/A' }}</td>
+                    <td>{{ clase.horas_semana or 'N/A' }}</td>
+                    <td>
+                        <!-- BOTÓN DE EDITAR AÑADIDO -->
+                        <a href="{{ url_for('gestion_bp.edit_clase_form', id_clase=clase.id_clase) }}" class="btn">Editar</a>
+                        <form action="{{ url_for('gestion_bp.delete_clase', id_clase=clase.id_clase) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que quieres eliminar esta clase? Advertencia: Esto podría afectar los horarios existentes.');">
+                            <button type="submit" class="btn btn-danger">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7">No hay clases registradas.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+</body>
+</html>
