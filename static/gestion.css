@@ -8,6 +8,11 @@
     padding: 20px;
 }
 
+/* Centra el título principal de la página */
+.container h1 {
+    text-align: center;
+}
+
 /* Estilos para las tarjetas de gestión */
 .gestion-card {
     background-color: #f9f9f9; /* Un fondo ligeramente gris para las tarjetas */
@@ -69,4 +74,34 @@
 
 .form-inline > div {
     flex: 1; /* Permite que los campos compartan el espacio */
+}
+
+/* Estilos para la nueva lista vertical de horarios */
+.horarios-lista-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem; /* Espacio entre cada tarjeta de horario */
+}
+
+.horario-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1.5rem;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.horario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Centra los botones de acción principales */
+.acciones {
+    text-align: center;
+    margin-bottom: 1rem; /* Añade un pequeño espacio debajo de los botones */
 }

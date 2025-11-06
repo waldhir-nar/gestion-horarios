@@ -221,6 +221,8 @@ LIMITE_HORAS_DIARIAS = 4
 PENALIZACION_EXCESO_HORAS = 100 
 PENALIZACION_INICIO_BLOQUE = 10
 PENALIZACION_HUECO = 1
+PENALIZACION_FRAGMENTACION = 3 
+PENALIZACION_BLOQUE_LARGO = 4 
 M = 1000 # Un valor 'M' grande para las restricciones de tipo Big M
 
 @horarios_bp.route('/ejecutar_creacion_automatica', methods=['POST'])
@@ -262,7 +264,7 @@ def ejecutar_creacion_automatica():
         ids_profesores = list(set(c['id_profesor'] for c in clases_a_planificar.values()))
 
         dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
-        horas = [f"{h:02d}:00" for h in range(7, 18)]
+        horas = [f"{h:02d}:00" for h in range(7, 14)]
 
         # --- Definir el problema de optimización ---
         prob = pulp.LpProblem("Generacion_Horarios_Optimizacion", pulp.LpMinimize)
@@ -276,12 +278,15 @@ def ejecutar_creacion_automatica():
         exceso_diario = pulp.LpVariable.dicts("ExcesoDiario", dias, 0, None, pulp.LpInteger)
         inicio_bloque = pulp.LpVariable.dicts("InicioBloque", (dias, horas), 0, 1, pulp.LpBinary)
         hueco = pulp.LpVariable.dicts("Hueco", (dias, horas), 0, 1, pulp.LpBinary)
-
+        inicio_clase = pulp.LpVariable.dicts("InicioClase", (ids_clases, dias, horas), 0, 1, pulp.LpBinary)
+        bloque_largo = pulp.LpVariable.dicts("BloqueLargo", (ids_clases, dias, horas), 0, 1, pulp.LpBinary) 
         # --- Función Objetivo (Minimizar Penalizaciones del Horario del Estudiante) ---
         prob += (
             pulp.lpSum(exceso_diario[d] for d in dias) * PENALIZACION_EXCESO_HORAS
             + pulp.lpSum(inicio_bloque[d][h] for d in dias for h in horas) * PENALIZACION_INICIO_BLOQUE
             + pulp.lpSum(hueco[d][h] for d in dias for h in horas[1:-1]) * PENALIZACION_HUECO
+            + pulp.lpSum(inicio_clase[id_c][d][h] for id_c in ids_clases for d in dias for h in horas) * PENALIZACION_FRAGMENTACION
+            + pulp.lpSum(bloque_largo[id_c][d][h] for id_c in ids_clases for d in dias for h in horas[:-2]) * PENALIZACION_BLOQUE_LARGO
         ), "Costo_Total_Horario_Estudiante"
 
         # --- Restricciones Duras (Innegociables) ---
@@ -333,8 +338,40 @@ def ejecutar_creacion_automatica():
                 # Un hueco es [OCUPADO, VACIO, OCUPADO]
                 prob += hueco[d][h_actual] >= slot_ocupado[d][h_anterior] + slot_ocupado[d][h_siguiente] - slot_ocupado[d][h_actual] - 1, f"Hueco_Dia_Logic_{d}_{h_actual}"
 
+            # --- (Puedes añadir este bloque después de la penalización de huecos, cerca de la línea 335) ---
+
+            # 7. Penalización por fragmentación de clases (para agrupar horas de la misma materia)
+        for id_c in ids_clases:
+             for d in dias:
+                 # Un inicio en la primera hora del día se cuenta si la clase está asignada ahí.
+                h0 = horas[0]
+                prob += inicio_clase[id_c][d][h0] >= vars_horario[id_c][d][h0], f"Inicio_Clase_{id_c}_{d}_{h0}"
+                     # --- Este bloque va después del bucle de la línea 349 ---
+# --- (Asegúrate de que esté dentro de los bucles "for id_c in ids_clases:" y "for d in dias:") ---
+
+                    # 8. Penalización por bloques de 3 horas o más (para priorizar bloques de 2)
+                for k in range(len(horas) - 2):
+                        h1 = horas[k]
+                        h2 = horas[k+1]
+                        h3 = horas[k+2]
+                        # La variable 'bloque_largo' se activa si hay 3 horas consecutivas ocupadas por la misma clase.
+                        # La lógica es: Largo >= (Hora1 + Hora2 + Hora3) - 2
+                        prob += bloque_largo[id_c][d][h1] >= vars_horario[id_c][d][h1] + vars_horario[id_c][d][h2] + vars_horario[id_c][d][h3] - 2, f"Detecta_Bloque_Largo_{id_c}_{d}_{h1}"
+
+                    # Para el resto de horas, un inicio ocurre si la hora actual está ocupada por la clase
+                    # y la hora anterior NO lo estaba.
+                for k in range(1, len(horas)):
+                        h_actual = horas[k]
+                        h_anterior = horas[k-1]
+                        # La magia ocurre aquí: inicio_clase >= actual - anterior.
+                        # Se fuerza a ser 1 solo en el patrón [AUSENTE, PRESENTE] -> [0, 1].
+                        prob += inicio_clase[id_c][d][h_actual] >= vars_horario[id_c][d][h_actual] - vars_horario[id_c][d][h_anterior], f"Inicio_Clase_Logic_{id_c}_{d}_{h_actual}"
+
+
         # --- Resolver el problema ---
-        prob.solve(pulp.PULP_CBC_CMD(msg=0))
+        # Le damos 60 segundos como máximo para encontrar una solución.
+        prob.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=60))
+
 
         # --- Procesar el resultado ---
         if pulp.LpStatus[prob.status] == 'Optimal':

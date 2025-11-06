@@ -2,32 +2,18 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Horarios</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horarios Guardados - UPCA</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        .horario-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .delete-button {
-            background-color: #dc3545;
-            color: white;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='gestion.css') }}">
 </head>
 <body>
     <header>
-        <h1 >Horarios</h1>
+        <h1>Sistema de Gestión de Horarios</h1>
         <nav>
             <ul>
                 <li><a href="{{ url_for('index') }}" class="boton-nav">Inicio</a></li>
-                <li><a href="{{ url_for('horarios_bp.lista_horarios') }}" class="boton-nav">Horarios</a></li>
+                <li><a href="{{ url_for('horarios_bp.lista_horarios') }}" class="boton-nav active">Horarios</a></li>
                 <li><a href="{{ url_for('profesores_bp.lista') }}" class="boton-nav">Profesores</a></li>
                 <li><a href="{{ url_for('cursos_bp.lista') }}" class="boton-nav">Cursos</a></li>
                 <li><a href="{{ url_for('gestion_bp.gestion') }}" class="boton-nav">Gestion-H</a></li>
@@ -36,70 +22,72 @@
     </header>
 
     <div class="container">
-        <div class="add-button-container">
-            <a href="{{ url_for('horarios_bp.add_horario_form') }}" class="add-button"> Crear Nuevo Horario Manual</a>
-            <a href="{{ url_for('horarios_bp.crear_horario_auto_form') }}" class="add-button automatic-button"> Crear Horario Automático</a>
+        <h1>Horarios Guardados</h1>
+        
+        <div class="acciones">
+            <a href="{{ url_for('horarios_bp.add_horario_form') }}" class="btn btn-danger">Añadir Entrada Manual</a>
+            <a href="{{ url_for('horarios_bp.crear_horario_auto_form') }}" class="btn btn-danger">Generar Horario Automático</a>
         </div>
+        <br>
 
-        <div class="horarios-grid">
-            {% for id, horario in horarios_guardados.items() %}
-                <div class="horario-card">
-                    <div class="horario-header">
-                        <h2>{{ horario.nombre }} - {{ horario.semestre_nombre or horario.curso_nombre }}</h2>
-                        <form action="{{ url_for('horarios_bp.delete_horario', id_cronograma=horario.id_cronograma) }}" method="POST" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este horario y todos sus detalles?');">
-                            <button type="submit" class="delete-button">Eliminar</button>
-                        </form>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Hora</th>
-                                {% for day in horario.days_of_week %}
-                                    <th>{{ day }}</th>
-                                {% endfor %}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% if not horario.sorted_hours %}
-                                <tr>
-                                    <td colspan="{{ horario.days_of_week|length + 1 }}">No hay clases en este horario.</td>
-                                </tr>
-                            {% else %}
-                                {% for hour in horario.sorted_hours %}
-                                    <tr>
-                                        <td>
-                                            {# Corrección: Usar un namespace para encontrar la hora de finalización de forma fiable #}
-                                            {% set h_fin_ns = namespace(value=None) %}
+        <!-- Contenedor principal que ahora apilará las tarjetas verticalmente -->
+        <div class="horarios-lista-vertical">
+            {% if horarios_guardados %}
+                {% for id_c, horario in horarios_guardados.items() %}
+                    <!-- Cada horario es una "tarjeta" separada -->
+                    <div class="horario-card">
+                        <div class="horario-header">
+                            <div>
+                                <h2>{{ horario.nombre }}</h2>
+                                <p>
+                                    <strong>Curso:</strong> {{ horario.curso_nombre or 'N/A' }} |
+                                    <strong>Semestre:</strong> {{ horario.semestre_nombre or 'N/A' }}
+                                </p>
+                            </div>
+                            <form action="{{ url_for('horarios_bp.delete_horario', id_cronograma=horario.id_cronograma) }}" method="post" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este horario?');">
+                                <button type="submit" class="btn btn-danger">Eliminar</button>
+                            </form>
+                        </div>
+                        
+                        {% if horario.grid %}
+                            <div class="table-responsive">
+                                <table class="schedule-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Hora</th>
                                             {% for day in horario.days_of_week %}
-                                                {% if h_fin_ns.value is none %}
-                                                    {% set detalle = horario.grid[hour][day] %}
-                                                    {% if detalle %}
-                                                        {% set h_fin_ns.value = detalle.h_fin %}
-                                                    {% endif %}
-                                                {% endif %}
+                                                <th>{{ day }}</th>
                                             {% endfor %}
-                                            {{ hour }} - {{ h_fin_ns.value or '' }}
-                                        </td>
-                                        {% for day in horario.days_of_week %}
-                                            <td>
-                                                {% set detalle = horario.grid[hour][day] %}
-                                                {% if detalle %}
-                                                    <strong>{{ detalle.clase_nombre }}</strong><br>
-                                                    <small>{{ detalle.profesor_nombre }}</small>
-                                                {% else %}
-                                                    &nbsp;
-                                                {% endif %}
-                                            </td>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for hour in horario.sorted_hours %}
+                                            <tr>
+                                                <td>{{ hour }}</td>
+                                                {% for day in horario.days_of_week %}
+                                                    <td>
+                                                        {% set detalle = horario.grid[hour][day] %}
+                                                        {% if detalle %}
+                                                            <strong>{{ detalle.clase_nombre }}</strong><br>
+                                                            <small>{{ detalle.profesor_nombre }}</small>
+                                                        {% else %}
+                                                            &nbsp;
+                                                        {% endif %}
+                                                    </td>
+                                                {% endfor %}
+                                            </tr>
                                         {% endfor %}
-                                    </tr>
-                                {% endfor %}
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="aviso">Este horario aún no tiene clases asignadas.</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
             {% else %}
                 <p>No hay horarios guardados.</p>
-            {% endfor %}
+            {% endif %}
         </div>
     </div>
 </body>
