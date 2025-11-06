@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, abort
+from flask import Blueprint, render_template, request, redirect, url_for, abort, flash
 from database import get_db_connection
 
 gestion_bp = Blueprint('gestion_bp', __name__, template_folder='templates')
@@ -43,7 +43,7 @@ def edit_form(id_semestre):
 
 @gestion_bp.route('/gestion/add_clase', methods=['POST'])
 def add_clase():
-    """Guarda una nueva clase en la base de datos."""
+    """Guarda una nueva clase en la base de datos con validación de duplicados."""
     if request.method == 'POST':
         nombre = request.form['nombre']
         descripcion = request.form.get('descripcion')
@@ -52,39 +52,74 @@ def add_clase():
         id_curso = request.form.get('id_curso')
         id_profesor = request.form.get('id_profesor')
         id_semestre = request.form.get('id_semestre')
+        
         conn = get_db_connection()
+
+        # --- VALIDACIÓN DE REDUNDANCIA ---
+        existe = conn.execute("""
+            SELECT id_clase FROM clases 
+            WHERE id_curso = ? AND id_profesor = ? AND id_semestre = ?
+        """, (id_curso, id_profesor, id_semestre)).fetchone()
+
+        if existe:
+            conn.close()
+            flash('Error: Ya existe una clase con la misma combinación de Curso, Profesor y Semestre.', 'error')
+            return redirect(url_for('gestion_bp.gestion'))
+        # --- FIN DE VALIDACIÓN ---
+
         conn.execute("""
             INSERT INTO clases (nombre, descripcion, n_horas, horas_semana, id_curso, id_profesor, id_semestre)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (nombre, descripcion, n_horas, horas_semana, id_curso, id_profesor, id_semestre))
         conn.commit()
         conn.close()
+        flash('Clase añadida correctamente.', 'success')
     return redirect(url_for('gestion_bp.gestion'))
 
 @gestion_bp.route('/gestion/add_semestre', methods=['POST'])
 def add_semestre():
     if request.method == 'POST':
-        nombre = request.form['nombre']
+        nombre = request.form['nombre'].strip()
         fecha_inicio = request.form['fecha_inicio']
         fecha_fin = request.form['fecha_fin']
         conn = get_db_connection()
+
+        # --- VALIDACIÓN DE REDUNDANCIA ---
+        existe = conn.execute('SELECT id_semestre FROM semestres WHERE LOWER(nombre) = ?', (nombre.lower(),)).fetchone()
+        if existe:
+            conn.close()
+            flash(f'Error: Ya existe un semestre con el nombre "{nombre}".', 'error')
+            return redirect(url_for('gestion_bp.gestion'))
+        # --- FIN DE VALIDACIÓN ---
+        
         conn.execute("INSERT INTO semestres (nombre, fecha_inicio, fecha_fin) VALUES (?, ?, ?)",
                        (nombre, fecha_inicio if fecha_inicio else None, fecha_fin if fecha_fin else None))
         conn.commit()
         conn.close()
+        flash(f'Semestre "{nombre}" añadido correctamente.', 'success')
     return redirect(url_for('gestion_bp.gestion'))
 
 @gestion_bp.route('/gestion/update/<int:id_semestre>', methods=['POST'])
 def update_semestre(id_semestre):
     if request.method == 'POST':
-        nombre = request.form['nombre']
+        nombre = request.form['nombre'].strip()
         fecha_inicio = request.form['fecha_inicio']
         fecha_fin = request.form['fecha_fin']
         conn = get_db_connection()
+
+        # --- VALIDACIÓN DE REDUNDANCIA ---
+        existe = conn.execute('SELECT id_semestre FROM semestres WHERE LOWER(nombre) = ? AND id_semestre != ?', (nombre.lower(), id_semestre)).fetchone()
+        if existe:
+            conn.close()
+            flash(f'Error: Ya existe otro semestre con el nombre "{nombre}".', 'error')
+            return redirect(url_for('gestion_bp.edit_form', id_semestre=id_semestre))
+        # --- FIN DE VALIDACIÓN ---
+
         conn.execute("UPDATE semestres SET nombre = ?, fecha_inicio = ?, fecha_fin = ? WHERE id_semestre = ?",
                        (nombre, fecha_inicio if fecha_inicio else None, fecha_fin if fecha_fin else None, id_semestre))
         conn.commit()
         conn.close()
+        flash('Semestre actualizado con éxito.', 'success')
     return redirect(url_for('gestion_bp.gestion'))
 
 @gestion_bp.route('/gestion/delete/<int:id_semestre>', methods=['POST'])
@@ -102,6 +137,7 @@ def delete_clase(id_clase):
     conn.execute("DELETE FROM clases WHERE id_clase = ?", (id_clase,))
     conn.commit()
     conn.close()
+    flash('Clase eliminada correctamente.', 'success')
     return redirect(url_for('gestion_bp.gestion'))
 
 # --- NUEVAS FUNCIONES PARA EDITAR CLASES ---
@@ -121,27 +157,49 @@ def edit_clase_form(id_clase):
 
 @gestion_bp.route('/gestion/update_clase/<int:id_clase>', methods=['POST'])
 def update_clase(id_clase):
-    """Procesa la actualización de los datos de una clase."""
+    """Procesa la actualización de los datos de una clase con validación de duplicados."""
     if request.method == 'POST':
+        id_curso = request.form.get('id_curso')
+        id_profesor = request.form.get('id_profesor')
+        id_semestre = request.form.get('id_semestre')
+        
+        conn = get_db_connection()
+
+        # --- VALIDACIÓN DE REDUNDANCIA ---
+        existe = conn.execute("""
+            SELECT id_clase FROM clases
+            WHERE id_curso = ? AND id_profesor = ? AND id_semestre = ? AND id_clase != ?
+        """, (id_curso, id_profesor, id_semestre, id_clase)).fetchone()
+
+        if existe:
+            flash('Error: Ya existe otra clase con la misma combinación de Curso, Profesor y Semestre.', 'error')
+            # Recargamos los datos para volver a mostrar el formulario de edición sin perder los cambios del usuario
+            cursos = conn.execute("SELECT id_curso, nombre FROM cursos ORDER BY nombre ASC").fetchall()
+            profesores = conn.execute("SELECT id_profesor, nombre FROM profesores ORDER BY nombre ASC").fetchall()
+            semestres = conn.execute("SELECT id_semestre, nombre FROM semestres ORDER BY nombre DESC").fetchall()
+            conn.close()
+            # Creamos un objeto 'clase' con los datos del formulario para que el usuario no los pierda
+            clase_con_error = {
+                'id_clase': id_clase, 'nombre': request.form['nombre'],
+                'descripcion': request.form.get('descripcion'), 'n_horas': request.form.get('n_horas'),
+                'horas_semana': request.form.get('horas_semana'), 'id_curso': int(id_curso) if id_curso else None,
+                'id_profesor': int(id_profesor) if id_profesor else None, 'id_semestre': int(id_semestre) if id_semestre else None
+            }
+            return render_template('edit_clase.html', clase=clase_con_error, cursos=cursos, profesores=profesores, semestres=semestres)
+        # --- FIN DE VALIDACIÓN ---
+
         nombre = request.form['nombre']
         descripcion = request.form.get('descripcion')
         n_horas = request.form.get('n_horas')
         horas_semana = request.form.get('horas_semana')
-        id_curso = request.form.get('id_curso')
-        id_profesor = request.form.get('id_profesor')
-        id_semestre = request.form.get('id_semestre')
-        conn = get_db_connection()
+        
         conn.execute("""
             UPDATE clases SET
-                nombre = ?,
-                descripcion = ?,
-                n_horas = ?,
-                horas_semana = ?,
-                id_curso = ?,
-                id_profesor = ?,
-                id_semestre = ?
+                nombre = ?, descripcion = ?, n_horas = ?, horas_semana = ?,
+                id_curso = ?, id_profesor = ?, id_semestre = ?
             WHERE id_clase = ?
         """, (nombre, descripcion, n_horas, horas_semana, id_curso, id_profesor, id_semestre, id_clase))
         conn.commit()
         conn.close()
+        flash('Clase actualizada correctamente.', 'success')
     return redirect(url_for('gestion_bp.gestion'))

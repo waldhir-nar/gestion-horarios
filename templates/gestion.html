@@ -25,6 +25,17 @@
 
 <div class="container">
 
+    {# --- BLOQUE DE MENSAJES FLASH AÑADIDO --- #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     <!-- SECCIÓN DE SEMESTRES -->
     <div class="gestion-card">
         <h2 style="text-align: center;">Gestión de Semestres</h2>

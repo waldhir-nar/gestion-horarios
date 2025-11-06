@@ -11,6 +11,18 @@
 <body class="add-prof-page">
     <!-- Se usa la misma estructura de contenedor que add_curso.html -->
     <div class="form-container">
+
+        {# --- BLOQUE DE MENSAJES FLASH AÑADIDO --- #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flashes">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
         <h1>Agregar Nuevo Semestre</h1>
         <form action="{{ url_for('gestion_bp.add_semestre') }}" method="POST">
             

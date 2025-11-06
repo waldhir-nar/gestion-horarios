@@ -1,7 +1,8 @@
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database import get_db_connection
 import sqlite3
-import pulp # <-- AÑADIDO: Importar PuLP
+import pulp
 
 horarios_bp = Blueprint('horarios_bp', __name__,
                         template_folder='templates',
@@ -55,7 +56,6 @@ def lista_horarios():
         
         detalles_list = [dict(row) for row in detalles_rows]
         
-        # Extraer el nombre del semestre del primer detalle (si existe)
         semestre_nombre = None
         if detalles_list:
             semestre_nombre = detalles_list[0]['semestre_nombre']
@@ -65,8 +65,8 @@ def lista_horarios():
         horarios_procesados[id_c] = {
             'id_cronograma': cronograma['id_cronograma'],
             'nombre': cronograma['nombre'],
-            'curso_nombre': cronograma['curso_nombre'], # Se mantiene como fallback
-            'semestre_nombre': semestre_nombre, # Se añade el semestre
+            'curso_nombre': cronograma['curso_nombre'],
+            'semestre_nombre': semestre_nombre,
             'grid': schedule_grid,
             'sorted_hours': sorted_hours,
             'days_of_week': days_of_week
@@ -121,6 +121,9 @@ def crear_cronograma():
         conn.execute("INSERT INTO cronogramas (nombre, id_curso) VALUES (?, ?)", (nombre_cronograma, id_curso))
         conn.commit()
         flash(f"Horario '{nombre_cronograma}' creado y asociado al curso con éxito.", "success")
+    except sqlite3.IntegrityError:
+        conn.rollback()
+        flash("no se puede crear dos horarios con el mismo nombre", "error")
     except Exception as e:
         conn.rollback()
         flash(f"Error al crear el horario: {e}", "error")
@@ -130,7 +133,6 @@ def crear_cronograma():
 
 @horarios_bp.route('/crear', methods=['POST'])
 def crear_horario():
-    # --- RECOGIDA DE DATOS ---
     id_cronograma = request.form.get('id_cronograma')
     id_clase = request.form.get('id_clase')
     id_semestre_form = request.form.get('id_semestre')
@@ -138,7 +140,6 @@ def crear_horario():
     h_inicio = request.form.get('h_inicio')
     h_fin = request.form.get('h_fin')
 
-    # --- VALIDACIONES BÁSICAS ---
     if not all([id_cronograma, id_clase, id_semestre_form, dia, h_inicio, h_fin]):
         flash("Error: Todos los campos del formulario son obligatorios.", "error")
         return redirect(url_for('horarios_bp.add_horario_form'))
@@ -214,6 +215,14 @@ def crear_horario_auto_form():
     conn.close()
     return render_template('crear_horario_auto.html', cursos=cursos, semestres=semestres)
 
+
+# --- Constantes para la Optimización ---
+LIMITE_HORAS_DIARIAS = 4
+PENALIZACION_EXCESO_HORAS = 100 
+PENALIZACION_INICIO_BLOQUE = 10
+PENALIZACION_HUECO = 1
+M = 1000 # Un valor 'M' grande para las restricciones de tipo Big M
+
 @horarios_bp.route('/ejecutar_creacion_automatica', methods=['POST'])
 def ejecutar_creacion_automatica():
     """Ejecuta el algoritmo de generación automática de horarios usando PuLP."""
@@ -228,11 +237,14 @@ def ejecutar_creacion_automatica():
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
+        # --- VALIDACIÓN: Verificar si el nombre ya existe antes de INSERTAR ---
+        cursor.execute("SELECT id_cronograma FROM cronogramas WHERE nombre = ?", (nombre_cronograma,))
+        if cursor.fetchone():
+            flash(f"Error: Ya existe un horario con el nombre '{nombre_cronograma}'. Por favor, elige otro.", "error")
+            conn.close()
+            return redirect(url_for('horarios_bp.crear_horario_auto_form'))
         cursor.execute("INSERT INTO cronogramas (nombre, id_curso) VALUES (?, ?)", (nombre_cronograma, id_curso))
         id_cronograma = cursor.lastrowid
-
-        # --- Definir el problema de optimización ---
-        prob = pulp.LpProblem("Generacion_Horarios", pulp.LpMinimize)
 
         # --- Obtener datos para el modelo ---
         clases_raw = conn.execute("""
@@ -242,62 +254,87 @@ def ejecutar_creacion_automatica():
 
         if not clases_raw:
             flash("No se encontraron clases con horas asignadas para este curso y semestre.", "warning")
-            conn.commit() # Guardar el cronograma vacío
+            conn.commit()
             return redirect(url_for('horarios_bp.lista_horarios'))
 
-        # Convertir a diccionarios para fácil acceso
         clases_a_planificar = {c['id_clase']: dict(c) for c in clases_raw}
         ids_clases = list(clases_a_planificar.keys())
         ids_profesores = list(set(c['id_profesor'] for c in clases_a_planificar.values()))
 
         dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
-        horas = [f"{h:02d}:00" for h in range(7, 18)] # Horario de 7 AM a 5 PM
-        bloques_horarios = [(d, h) for d in dias for h in horas]
+        horas = [f"{h:02d}:00" for h in range(7, 18)]
 
-        # --- Crear variables de decisión ---
-        # x[(id_clase, dia, hora)] = 1 si la clase se da en ese bloque, 0 si no
+        # --- Definir el problema de optimización ---
+        prob = pulp.LpProblem("Generacion_Horarios_Optimizacion", pulp.LpMinimize)
+
+        # --- Variables de Decisión ---
         vars_horario = pulp.LpVariable.dicts("Horario", (ids_clases, dias, horas), 0, 1, pulp.LpBinary)
 
-        # --- Objetivo (dummy): solo queremos una solución factible ---
-        prob += 0, "Función Objetivo Dummy"
+        # --- Variables Auxiliares para Costes (Centradas en el Día) ---
+        slot_ocupado = pulp.LpVariable.dicts("SlotOcupado", (dias, horas), 0, 1, pulp.LpBinary)
+        horas_por_dia = pulp.LpVariable.dicts("HorasPorDia", dias, 0, None, pulp.LpInteger)
+        exceso_diario = pulp.LpVariable.dicts("ExcesoDiario", dias, 0, None, pulp.LpInteger)
+        inicio_bloque = pulp.LpVariable.dicts("InicioBloque", (dias, horas), 0, 1, pulp.LpBinary)
+        hueco = pulp.LpVariable.dicts("Hueco", (dias, horas), 0, 1, pulp.LpBinary)
 
-        # --- Añadir Restricciones ---
+        # --- Función Objetivo (Minimizar Penalizaciones del Horario del Estudiante) ---
+        prob += (
+            pulp.lpSum(exceso_diario[d] for d in dias) * PENALIZACION_EXCESO_HORAS
+            + pulp.lpSum(inicio_bloque[d][h] for d in dias for h in horas) * PENALIZACION_INICIO_BLOQUE
+            + pulp.lpSum(hueco[d][h] for d in dias for h in horas[1:-1]) * PENALIZACION_HUECO
+        ), "Costo_Total_Horario_Estudiante"
+
+        # --- Restricciones Duras (Innegociables) ---
         # 1. Cada clase debe cumplir sus horas semanales
         for id_c, clase in clases_a_planificar.items():
-            prob += pulp.lpSum(vars_horario[id_c][d][h] for d, h in bloques_horarios) == clase['horas_semana'], f"Horas_Semanales_{id_c}"
+            prob += pulp.lpSum(vars_horario[id_c][d][h] for d in dias for h in horas) == clase['horas_semana'], f"Horas_Semanales_{id_c}"
 
-        # 2. En un bloque (día, hora) determinado, solo puede haber una clase del curso actual
-        for d, h in bloques_horarios:
-            prob += pulp.lpSum(vars_horario[id_c][d][h] for id_c in ids_clases) <= 1, f"Unicidad_Curso_{d}_{h}"
+        # 2. Unicidad del Slot de Horario (Un solo slot ocupado a la vez)
+        for d in dias:
+            for h in horas:
+                prob += slot_ocupado[d][h] == pulp.lpSum(vars_horario[id_c][d][h] for id_c in ids_clases), f"Define_Slot_Ocupado_{d}_{h}"
 
-        # 3. Un profesor no puede dar dos clases a la vez (en ningún curso/horario)
-        profesores_ocupados = conn.execute("""
-            SELECT cl.id_profesor, dc.dia, dc.h_inicio 
-            FROM detalle_cronogramas dc
-            JOIN clases cl ON dc.id_clase = cl.id_clase
-            WHERE cl.id_profesor IN (%s)
-        """ % ','.join('?' for _ in ids_profesores), ids_profesores).fetchall()
-        
+        # 3. No Colisión de Profesores (Un profesor solo puede dar una clase a la vez)
+        clases_por_profesor = {id_p: [id_c for id_c, clase in clases_a_planificar.items() if clase['id_profesor'] == id_p] for id_p in ids_profesores}
+        profesores_ocupados = conn.execute("SELECT cl.id_profesor, dc.dia, dc.h_inicio FROM detalle_cronogramas dc JOIN clases cl ON dc.id_clase = cl.id_clase").fetchall()
         horarios_profesores_ocupados = {}
         for p in profesores_ocupados:
             horarios_profesores_ocupados.setdefault(p['id_profesor'], []).append((p['dia'], p['h_inicio']))
 
         for id_p in ids_profesores:
-            clases_del_profesor = [id_c for id_c, clase in clases_a_planificar.items() if clase['id_profesor'] == id_p]
-            for d, h in bloques_horarios:
-                # Suma de clases del profesor en el bloque actual
-                suma_clases_profesor_actual = pulp.lpSum(vars_horario[id_c][d][h] for id_c in clases_del_profesor)
-                
-                # Comprobar si el profesor ya está ocupado por otro horario
-                if (d, h) in horarios_profesores_ocupados.get(id_p, []):
-                    # Si ya está ocupado, no puede dar ninguna clase del horario actual
-                    prob += suma_clases_profesor_actual == 0, f"Conflicto_Profesor_Ocupado_{id_p}_{d}_{h}"
-                else:
-                    # Si no está ocupado, solo puede dar una clase a la vez
-                    prob += suma_clases_profesor_actual <= 1, f"Unicidad_Profesor_{id_p}_{d}_{h}"
+            for d in dias:
+                for h in horas:
+                    suma_clases_profesor_actual = pulp.lpSum(vars_horario[id_c][d][h] for id_c in clases_por_profesor.get(id_p, []))
+                    if (d, h) in horarios_profesores_ocupados.get(id_p, []):
+                        prob += suma_clases_profesor_actual == 0, f"Conflicto_Externo_Profesor_{id_p}_{d}_{h}"
+                    else:
+                        prob += suma_clases_profesor_actual <= 1, f"Unicidad_Interna_Profesor_{id_p}_{d}_{h}"
+
+        # --- Restricciones para Cálculo de Costes (Penalizaciones Flexibles) ---
+        for d in dias:
+            # 4. Cálculo de horas totales por día
+            prob += horas_por_dia[d] == pulp.lpSum(slot_ocupado[d][h] for h in horas), f"Calc_Horas_Por_Dia_{d}"
+            # Penalización si las horas del día exceden el límite
+            prob += exceso_diario[d] >= horas_por_dia[d] - LIMITE_HORAS_DIARIAS, f"Penaliza_Exceso_{d}"
+
+            # 5. Penalización por cada inicio de bloque en el día
+            h0 = horas[0]
+            prob += inicio_bloque[d][h0] == slot_ocupado[d][h0], f"Inicio_Bloque_Dia_0_{d}"
+            for k in range(1, len(horas)):
+                h_actual = horas[k]
+                h_anterior = horas[k-1]
+                prob += inicio_bloque[d][h_actual] >= slot_ocupado[d][h_actual] - slot_ocupado[d][h_anterior], f"Inicio_Bloque_Dia_Logic_{d}_{h_actual}"
+
+            # 6. Penalización por huecos en el día
+            for k in range(len(horas) - 2):
+                h_anterior = horas[k]
+                h_siguiente = horas[k+2]
+                h_actual = horas[k+1]
+                # Un hueco es [OCUPADO, VACIO, OCUPADO]
+                prob += hueco[d][h_actual] >= slot_ocupado[d][h_anterior] + slot_ocupado[d][h_siguiente] - slot_ocupado[d][h_actual] - 1, f"Hueco_Dia_Logic_{d}_{h_actual}"
 
         # --- Resolver el problema ---
-        prob.solve(pulp.PULP_CBC_CMD(msg=0)) # msg=0 para suprimir logs de PuLP
+        prob.solve(pulp.PULP_CBC_CMD(msg=0))
 
         # --- Procesar el resultado ---
         if pulp.LpStatus[prob.status] == 'Optimal':
@@ -312,17 +349,15 @@ def ejecutar_creacion_automatica():
                                 VALUES (?, ?, ?, ?, ?, ?)
                             """, (id_cronograma, d, h, h_fin, id_clase, id_curso))
             conn.commit()
-            flash(f"Horario '{nombre_cronograma}' generado con éxito usando optimización.", "success")
+            flash(f"Horario '{nombre_cronograma}' generado con éxito. Costo de penalización: {pulp.value(prob.objective):.2f}", "success")
         else:
-            # Si no se encuentra solución, revertir la creación del cronograma
             conn.rollback()
-            flash(f"No se pudo generar un horario que cumpliera todas las restricciones. Posibles causas: falta de disponibilidad de profesores, demasiadas horas de clase para los bloques disponibles.", "error")
-            # Es importante eliminar el cronograma vacío que se creó al inicio
+            flash(f"No se pudo generar un horario que cumpliera todas las restricciones. Estado: {pulp.LpStatus[prob.status]}", "error")
             return redirect(url_for('horarios_bp.crear_horario_auto_form'))
 
     except sqlite3.IntegrityError:
         conn.rollback()
-        flash(f"Error: El nombre del horario '{nombre_cronograma}' ya existe. Por favor, elige otro.", "error")
+        flash("no se puede crear dos horarios con el mismo nombre", "error")
         return redirect(url_for('horarios_bp.crear_horario_auto_form'))
     except Exception as e:
         conn.rollback()
@@ -333,14 +368,13 @@ def ejecutar_creacion_automatica():
 
     return redirect(url_for('horarios_bp.lista_horarios'))
 
+
 @horarios_bp.route('/delete/<int:id_cronograma>', methods=['POST'])
 def delete_horario(id_cronograma):
     """Elimina un horario y todos sus detalles."""
     conn = get_db_connection()
     try:
-        # Eliminar primero los detalles del cronograma
         conn.execute("DELETE FROM detalle_cronogramas WHERE id_cronograma = ?", (id_cronograma,))
-        # Luego, eliminar el cronograma principal
         conn.execute("DELETE FROM cronogramas WHERE id_cronograma = ?", (id_cronograma,))
         conn.commit()
         flash("El horario y todos sus detalles han sido eliminados con éxito.", "success")

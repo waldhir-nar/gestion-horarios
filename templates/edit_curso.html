@@ -2,14 +2,14 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Agregar Nuevo Curso</title>
+    <title>Editar Curso</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='add_profesor.css') }}"> <!-- CSS ORIGINAL MANTENIDO -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='add_profesor.css') }}"> <!-- CSS Estandarizado -->
 </head>
 <body class="add-prof-page">
     <div class="form-container">
-        
-        {# --- BLOQUE DE MENSAJES FLASH AÑADIDO --- #}
+
+        {# --- BLOQUE DE MENSAJES FLASH --- #}
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             <div class="flashes">
@@ -20,18 +20,18 @@
           {% endif %}
         {% endwith %}
 
-        <h1>Registrar Nuevo Curso</h1>
-        <form action="{{ url_for('cursos_bp.add') }}" method="POST">
+        <h1>Editar Curso</h1>
+        <form action="{{ url_for('cursos_bp.edit', id_curso=curso.id_curso) }}" method="POST">
             <label for="nombre">Nombre del Curso:</label>
-            {# Se añade 'value' para repoblar el campo en caso de error #}
-            <input type="text" id="nombre" name="nombre" placeholder="Ej: Ing. de Sistemas - Semestre 7" value="{{ nombre or '' }}" required>
+            {# Usamos 'value' para pre-rellenar el campo con los datos actuales #}
+            <input type="text" id="nombre" name="nombre" value="{{ curso.nombre }}" required>
 
             <label for="descripcion">Descripción:</label>
-            {# Se añade 'value' para repoblar el campo en caso de error #}
-            <input type="text" id="descripcion" name="descripcion" placeholder="Ej: Grupo Principal" value="{{ descripcion or '' }}">
+            {# Se cambia a input para coincidir con el formulario de añadir #}
+            <input type="text" id="descripcion" name="descripcion" value="{{ curso.descripcion }}">
 
             <div class="form-actions">
-                <button type="submit" class="btn">Guardar</button>
+                <button type="submit" class="btn">Guardar Cambios</button>
                 <a href="{{ url_for('cursos_bp.lista') }}" class="btn btn-secondary">Cancelar</a>
             </div>
         </form>

@@ -1,43 +1,86 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database import get_db_connection
 
-# Creamos el Blueprint para la sección de cursos
 cursos_bp = Blueprint('cursos_bp', __name__, template_folder='templates')
 
 @cursos_bp.route("/")
 def lista(): 
-    """Renderiza la lista de cursos desde la base de datos."""
     conn = get_db_connection()
-    # Usamos 'id_curso' de acuerdo al esquema de la base de datos
-    lista_cursos = conn.execute("SELECT id_curso, nombre, descripcion FROM cursos").fetchall()
+    lista_cursos = conn.execute("SELECT id_curso, nombre, descripcion FROM cursos ORDER BY nombre ASC").fetchall()
     conn.close()
     return render_template("cursos.html", cursos=lista_cursos)
 
 @cursos_bp.route("/add", methods=['GET', 'POST'])
 def add():
-    """Maneja la adición de un nuevo curso."""
     if request.method == 'POST':
-        nombre = request.form['nombre']
-        descripcion = request.form['descripcion']
+        nombre = request.form.get('nombre', '').strip()
+        descripcion = request.form.get('descripcion', '').strip()
+
+        if not nombre:
+            flash("El nombre del curso es obligatorio.", "error")
+            return render_template("add_curso.html", nombre=nombre, descripcion=descripcion)
 
         conn = get_db_connection()
-        conn.execute("INSERT INTO cursos (nombre, descripcion) VALUES (?, ?)",
-                       (nombre, descripcion))
+        # VERIFICACIÓN DE DUPLICADOS (case-insensitive)
+        existe = conn.execute('SELECT id_curso FROM cursos WHERE LOWER(nombre) = ?', (nombre.lower(),)).fetchone()
+        
+        if existe:
+            conn.close()
+            flash('Ya existe un curso con este nombre. Por favor, elige otro.', 'error')
+            return render_template("add_curso.html", nombre=nombre, descripcion=descripcion)
+
+        conn.execute("INSERT INTO cursos (nombre, descripcion) VALUES (?, ?)", (nombre, descripcion))
         conn.commit()
         conn.close()
-
-        # Redirigir a la lista de cursos para ver el nuevo registro
+        flash(f"Curso '{nombre}' añadido con éxito.", "success")
         return redirect(url_for('cursos_bp.lista'))
 
-    # Si es GET, solo muestra el formulario
     return render_template("add_curso.html")
 
-# La ruta ahora usa id_curso
-@cursos_bp.route("/delete/<int:id_curso>")
+@cursos_bp.route("/edit/<int:id_curso>", methods=['GET', 'POST'])
+def edit(id_curso):
+    conn = get_db_connection()
+
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        descripcion = request.form.get('descripcion', '').strip()
+
+        if not nombre:
+            flash("El nombre del curso es un campo obligatorio.", "error")
+            curso_para_template = {'id_curso': id_curso, 'nombre': nombre, 'descripcion': descripcion}
+            return render_template('edit_curso.html', curso=curso_para_template)
+
+        # VERIFICACIÓN DE DUPLICADOS (case-insensitive, excluyendo el curso actual)
+        existe = conn.execute('SELECT id_curso FROM cursos WHERE LOWER(nombre) = ? AND id_curso != ?',
+                              (nombre.lower(), id_curso)).fetchone()
+
+        if existe:
+            conn.close()
+            flash('Ya existe otro curso con este nombre. Por favor, elige otro.', 'error')
+            curso_para_template = {'id_curso': id_curso, 'nombre': nombre, 'descripcion': descripcion}
+            return render_template('edit_curso.html', curso=curso_para_template)
+
+        conn.execute('UPDATE cursos SET nombre = ?, descripcion = ? WHERE id_curso = ?', (nombre, descripcion, id_curso))
+        conn.commit()
+        conn.close()
+        flash('Curso actualizado con éxito.', 'success')
+        return redirect(url_for('cursos_bp.lista'))
+
+    # Lógica para GET
+    curso = conn.execute('SELECT * FROM cursos WHERE id_curso = ?', (id_curso,)).fetchone()
+    conn.close()
+    
+    if curso is None:
+        flash('El curso que intentas editar no existe.', 'error')
+        return redirect(url_for('cursos_bp.lista'))
+        
+    return render_template('edit_curso.html', curso=curso)
+
+@cursos_bp.route("/delete/<int:id_curso>", methods=['POST'])
 def delete(id_curso):
-    """Elimina un curso por su ID."""
     conn = get_db_connection()
     conn.execute("DELETE FROM cursos WHERE id_curso = ?", (id_curso,))
     conn.commit()
     conn.close()
+    flash('Curso eliminado con éxito.', 'success')
     return redirect(url_for('cursos_bp.lista'))

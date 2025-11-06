@@ -57,7 +57,7 @@ def init_db():
         FOREIGN KEY (id_semestre) REFERENCES semestres(id_semestre)
     );
 
-    /* MODIFICACIÓN: Se añade la columna id_curso a la tabla cronogramas */
+    /* MODIFICACIÓN: Se añade la restricción UNIQUE a la columna nombre */
     CREATE TABLE IF NOT EXISTS cronogramas (
         id_cronograma INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL,

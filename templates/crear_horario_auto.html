@@ -14,6 +14,19 @@
 </header>
 
 <div class="container">
+    
+    {# Bloque para mostrar mensajes flash (errores, éxito, etc.) #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+        {% for category, message in messages %}
+          {# Asignamos una clase CSS basada en la categoría del mensaje #}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     <div class="form-container">
         <h2 style="text-align: center; margin-bottom: 2rem;">Parámetros de Generación</h2>
         
