@@ -4,6 +4,22 @@
     <meta charset="UTF-8">
     <title>Horarios</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .horario-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -14,7 +30,6 @@
                 <li><a href="{{ url_for('horarios_bp.lista_horarios') }}" class="boton-nav">Horarios</a></li>
                 <li><a href="{{ url_for('profesores_bp.lista') }}" class="boton-nav">Profesores</a></li>
                 <li><a href="{{ url_for('cursos_bp.lista') }}" class="boton-nav">Cursos</a></li>
-                <li><a href="/aulas" class="boton-nav">Aulas</a></li>
                 <li><a href="{{ url_for('gestion_bp.gestion') }}" class="boton-nav">Gestion-H</a></li>
             </ul>
         </nav>
@@ -22,39 +37,63 @@
 
     <div class="container">
         <div class="add-button-container">
-            <a href="{{ url_for('horarios_bp.add_horario_form') }}" class="add-button">➕ Crear Nuevo Horario Manual</a>
-            <!-- BOTÓN NUEVO PARA CREACIÓN AUTOMÁTICA -->
-            <a href="{{ url_for('horarios_bp.crear_horario_auto_form') }}" class="add-button automatic-button">🚀 Crear Horario Automático</a>
+            <a href="{{ url_for('horarios_bp.add_horario_form') }}" class="add-button"> Crear Nuevo Horario Manual</a>
+            <a href="{{ url_for('horarios_bp.crear_horario_auto_form') }}" class="add-button automatic-button"> Crear Horario Automático</a>
         </div>
 
         <div class="horarios-grid">
             {% for id, horario in horarios_guardados.items() %}
                 <div class="horario-card">
-                    <h2>{{ horario.nombre }}
-                        {% if horario.curso_nombre %}
-                            <span class="curso-tag"> ({{ horario.curso_nombre }})</span>
-                        {% endif %}
-                    </h2>
+                    <div class="horario-header">
+                        <h2>{{ horario.nombre }} - {{ horario.semestre_nombre or horario.curso_nombre }}</h2>
+                        <form action="{{ url_for('horarios_bp.delete_horario', id_cronograma=horario.id_cronograma) }}" method="POST" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este horario y todos sus detalles?');">
+                            <button type="submit" class="delete-button">Eliminar</button>
+                        </form>
+                    </div>
                     <table>
                         <thead>
                             <tr>
-                                <th>Día</th>
                                 <th>Hora</th>
-                                <th>Curso</th>
-                                <th>Profesor</th>
-                                <th>Asignatura</th>
+                                {% for day in horario.days_of_week %}
+                                    <th>{{ day }}</th>
+                                {% endfor %}
                             </tr>
                         </thead>
                         <tbody>
-                            {% for detalle in horario.detalles %}
+                            {% if not horario.sorted_hours %}
                                 <tr>
-                                    <td>{{ detalle.dia }}</td>
-                                    <td>{{ detalle.h_inicio }} - {{ detalle.h_fin }}</td>
-                                    <td>{{ detalle.curso_nombre }}</td>
-                                    <td>{{ detalle.profesor_nombre }}</td>
-                                    <td>{{ detalle.clase_nombre }}</td>
+                                    <td colspan="{{ horario.days_of_week|length + 1 }}">No hay clases en este horario.</td>
                                 </tr>
-                            {% endfor %}
+                            {% else %}
+                                {% for hour in horario.sorted_hours %}
+                                    <tr>
+                                        <td>
+                                            {# Corrección: Usar un namespace para encontrar la hora de finalización de forma fiable #}
+                                            {% set h_fin_ns = namespace(value=None) %}
+                                            {% for day in horario.days_of_week %}
+                                                {% if h_fin_ns.value is none %}
+                                                    {% set detalle = horario.grid[hour][day] %}
+                                                    {% if detalle %}
+                                                        {% set h_fin_ns.value = detalle.h_fin %}
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endfor %}
+                                            {{ hour }} - {{ h_fin_ns.value or '' }}
+                                        </td>
+                                        {% for day in horario.days_of_week %}
+                                            <td>
+                                                {% set detalle = horario.grid[hour][day] %}
+                                                {% if detalle %}
+                                                    <strong>{{ detalle.clase_nombre }}</strong><br>
+                                                    <small>{{ detalle.profesor_nombre }}</small>
+                                                {% else %}
+                                                    &nbsp;
+                                                {% endif %}
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>

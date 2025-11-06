@@ -17,7 +17,6 @@
             <li><a href="{{ url_for('horarios_bp.lista_horarios') }}" class="boton-nav">Horarios</a></li>
             <li><a href="{{ url_for('profesores_bp.lista') }}" class="boton-nav">Profesores</a></li>
             <li><a href="{{ url_for('cursos_bp.lista') }}" class="boton-nav">Cursos</a></li>
-            <li><a href="/aulas" class="boton-nav">Aulas</a></li>
             <li><a href="{{ url_for('gestion_bp.gestion') }}" class="boton-nav">Gestion-H</a></li>
         </ul>
     </nav>
@@ -26,18 +25,18 @@
 <div class="container">
     <div class="card">
         <h2>Bienvenido</h2>
-        <p>Este es el sistema de gestión de horarios de la Universidad Popular del Cesar.</p>
+        <p>Este es el sistema de gestión de horarios de la <b>CORPORACIÓN UNIVERSITARIA POLITÉCNICO COSTA ATLÁNTICA U-PCA.</b></p>
         <p>Utilice la navegación para acceder a las diferentes secciones:</p>
         <ul>
             <li><b>Horarios:</b> Para visualizar y crear nuevos horarios.</li>
-            <li><b>Gestión:</b> Para administrar semestres, clases, cursos y profesores.</li>
+            <li><b>Gestión:</b> Para administrar semestres, clases.</li>
         </ul>
     </div>
 
     <div class="card">
         <h2>Acciones Rápidas</h2>
         <div class="quick-actions">
-            <a href="{{ url_for('horarios_bp.crear_horario') }}" class="btn">Crear Nuevo Horario</a>
+            <a href="{{ url_for('horarios_bp.lista_horarios') }}" class="btn">Crear Nuevo Horario</a>
             <a href="{{ url_for('gestion_bp.gestion') }}" class="btn">Ir a Gestión</a>
         </div>
     </div>

@@ -7,6 +7,27 @@ horarios_bp = Blueprint('horarios_bp', __name__,
                         template_folder='templates',
                         url_prefix='/horarios')
 
+def _organize_schedule_for_display(details):
+    """
+    Helper function to process db records into a structured grid for the template.
+    """
+    days_of_week = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
+    
+    if not details:
+        return {}, [], days_of_week
+
+    hours = sorted(list(set(d['h_inicio'] for d in details)))
+
+    schedule_grid = {hour: {day: None for day in days_of_week} for hour in hours}
+
+    for detail in details:
+        hour = detail['h_inicio']
+        day = detail['dia']
+        if hour in schedule_grid and day in schedule_grid[hour]:
+            schedule_grid[hour][day] = detail
+
+    return schedule_grid, hours, days_of_week
+
 @horarios_bp.route('/')
 def lista_horarios():
     conn = get_db_connection()
@@ -17,25 +38,42 @@ def lista_horarios():
         ORDER BY cr.id_cronograma DESC
     """).fetchall()
     
-    horarios_guardados = {}
+    horarios_procesados = {}
     for cronograma in cronogramas:
         id_c = cronograma['id_cronograma']
         detalles_rows = conn.execute("""
-            SELECT d.dia, d.h_inicio, d.h_fin, cl.nombre as clase_nombre, pr.nombre as profesor_nombre, cu.nombre as curso_nombre
+            SELECT d.dia, d.h_inicio, d.h_fin, cl.nombre as clase_nombre, 
+                   pr.nombre as profesor_nombre, cu.nombre as curso_nombre, 
+                   se.nombre as semestre_nombre
             FROM detalle_cronogramas d
             JOIN clases cl ON d.id_clase = cl.id_clase
             JOIN cursos cu ON cl.id_curso = cu.id_curso
             JOIN profesores pr ON cl.id_profesor = pr.id_profesor
+            LEFT JOIN semestres se ON cl.id_semestre = se.id_semestre
             WHERE d.id_cronograma = ?
-            ORDER BY d.h_inicio
         """, (id_c,)).fetchall()
-        horarios_guardados[id_c] = {
+        
+        detalles_list = [dict(row) for row in detalles_rows]
+        
+        # Extraer el nombre del semestre del primer detalle (si existe)
+        semestre_nombre = None
+        if detalles_list:
+            semestre_nombre = detalles_list[0]['semestre_nombre']
+
+        schedule_grid, sorted_hours, days_of_week = _organize_schedule_for_display(detalles_list)
+        
+        horarios_procesados[id_c] = {
+            'id_cronograma': cronograma['id_cronograma'],
             'nombre': cronograma['nombre'],
-            'curso_nombre': cronograma['curso_nombre'],
-            'detalles': [dict(row) for row in detalles_rows]
+            'curso_nombre': cronograma['curso_nombre'], # Se mantiene como fallback
+            'semestre_nombre': semestre_nombre, # Se añade el semestre
+            'grid': schedule_grid,
+            'sorted_hours': sorted_hours,
+            'days_of_week': days_of_week
         }
     conn.close()
-    return render_template("horarios.html", horarios_guardados=horarios_guardados)
+    return render_template("horarios.html", horarios_guardados=horarios_procesados)
+
 
 @horarios_bp.route('/add')
 def add_horario_form():
@@ -293,4 +331,22 @@ def ejecutar_creacion_automatica():
     finally:
         conn.close()
 
+    return redirect(url_for('horarios_bp.lista_horarios'))
+
+@horarios_bp.route('/delete/<int:id_cronograma>', methods=['POST'])
+def delete_horario(id_cronograma):
+    """Elimina un horario y todos sus detalles."""
+    conn = get_db_connection()
+    try:
+        # Eliminar primero los detalles del cronograma
+        conn.execute("DELETE FROM detalle_cronogramas WHERE id_cronograma = ?", (id_cronograma,))
+        # Luego, eliminar el cronograma principal
+        conn.execute("DELETE FROM cronogramas WHERE id_cronograma = ?", (id_cronograma,))
+        conn.commit()
+        flash("El horario y todos sus detalles han sido eliminados con éxito.", "success")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error al eliminar el horario: {e}", "error")
+    finally:
+        conn.close()
     return redirect(url_for('horarios_bp.lista_horarios'))

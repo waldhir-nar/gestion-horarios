@@ -18,7 +18,6 @@
             <li><a href="{{ url_for('horarios_bp.lista_horarios') }}" class="boton-nav">Horarios</a></li>
             <li><a href="{{ url_for('profesores_bp.lista') }}" class="boton-nav">Profesores</a></li>
             <li><a href="{{ url_for('cursos_bp.lista') }}" class="boton-nav">Cursos</a></li>
-            <li><a href="/aulas" class="boton-nav">Aulas</a></li>
             <li><a href="{{ url_for('gestion_bp.gestion') }}" class="boton-nav">Gestion-H</a></li>
         </ul>
     </nav>
@@ -30,7 +29,7 @@
     <div class="gestion-card">
         <h2 style="text-align: center;">Gestión de Semestres</h2>
         <div class="add-button-container">
-            <a href="{{ url_for('gestion_bp.add_form') }}" class="add-button">➕ Agregar Nuevo Semestre</a>
+            <a href="{{ url_for('gestion_bp.add_form') }}" class="add-button"> Agregar Nuevo Semestre</a>
         </div>
         <h3 style="text-align: center;">Semestres Registrados</h3>
         <table>
@@ -107,7 +106,7 @@
                 </select>
             </div>
             <div class="form-row" style="justify-content: center; margin-top: 20px;">
-                <button type="submit" class="btn">+ Agregar Clase</button>
+                <button type="submit" class="btn"> Agregar Clase</button>
             </div>
         </form>
 

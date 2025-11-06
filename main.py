@@ -1,4 +1,5 @@
 # 1. Importaciones necesarias
+import os
 from flask import Flask, render_template
 from database import get_db_connection
 
@@ -9,6 +10,9 @@ from gestion import gestion_bp
 from horarios import horarios_bp # <-- AÑADIDO
 
 app = Flask(__name__)
+
+# Añadir una clave secreta para la gestión de sesiones (necesaria para flash)
+app.secret_key = os.urandom(24)
 
 # 2. Registrar los blueprints con sus prefijos de URL
 app.register_blueprint(profesores_bp, url_prefix='/profesores')
